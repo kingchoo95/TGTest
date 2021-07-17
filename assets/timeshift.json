@@ -1,0 +1,41 @@
+{"bus_schedule": {
+
+  "Night Shift": [
+    {
+      "schedule_trip": "Return",
+      "start_time": "06.30 am",
+      "end_time": "07.59 am"
+    },
+    {
+      "schedule_trip": "Departure",
+      "start_time": "06.30 pm",
+      "end_time": "07.00 pm"
+    }
+  ],
+  "Night Overtime": [
+    {
+      "schedule_trip": "Return",
+      "start_time": "08.00 am",
+      "end_time": "08.30 am"
+    }
+  ],
+  "Morning Shift": [
+    {
+      "schedule_trip": "Departure",
+      "start_time": "05.30 am",
+      "end_time": "06.00 am"
+    },
+    {
+      "schedule_trip": "Return",
+      "start_time": "06.30 pm",
+      "end_time": "07.59 pm"
+    }
+  ],
+  "Morning Overtime": [
+    {
+      "schedule_trip": "Return",
+      "start_time": "08.00 pm",
+      "end_time": "08.30 pm"
+    }
+  ]
+}}

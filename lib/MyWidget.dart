@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:tg_answer/TimeSlot.dart';
+import 'dart:async'show Future;
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
 
 class MyWidget extends StatefulWidget {
   @override
@@ -7,64 +12,19 @@ class MyWidget extends StatefulWidget {
 
 class _MyWidgetState extends State<MyWidget> {
 
-  int _dropDownvalue = 1;
+  int _dropDownvalue = 0;
 
-  var jsonData = {"bus_schedule": {
-    "Night Shift": [
-      {
-        "schedule_trip": "Return",
-        "start_time": "06.30 am",
-        "end_time": "07.59 am"
-      },
-      {
-        "schedule_trip": "Departure",
-        "start_time": "06.30 pm",
-        "end_time": "07.00 pm"
-      }
-    ],
-    "Night Overtime": [
-      {
-        "schedule_trip": "Return",
-        "start_time": "08.00 am",
-        "end_time": "08.30 am"
-      }
-    ],
-    "Morning Shift": [
-      {
-        "schedule_trip": "Departure",
-        "start_time": "05.30 am",
-        "end_time": "06.00 am"
-      },
-      {
-        "schedule_trip": "Return",
-        "start_time": "06.30 pm",
-        "end_time": "07.59 pm"
-      }
-    ],
-    "Morning Overtime": [
-      {
-        "schedule_trip": "Return",
-        "start_time": "08.00 pm",
-        "end_time": "08.30 pm"
-      }
-    ]
-  },};
+  Future<String> _loadTimeSlot() async {
+    return await rootBundle.loadString('assets/timeshift.json');
+  }
 
   List<DropdownMenuItem> dropdownItemList = [];
+  List<ShiftInfo> shiftInfo = [];
 
   @override
   Widget build(BuildContext context) {
-
-    Map<String, List<Map<String, String>>>? timeSlot =  jsonData["bus_schedule"];
-
-    dropdownItemList.clear();
-
-    int count = 0;
-    timeSlot!.forEach((key, value) {
-      dropdownItemList.add(dropDownWidget(count,"","","",key));
-      count++;
-    });
-
+    loadTimeSlot();
+    createDropDownItem();
     return dropDownButton();
   }
 
@@ -72,15 +32,19 @@ class _MyWidgetState extends State<MyWidget> {
     return Scaffold(
       body: Center(
         child: Container(
-            child: DropdownButton(
+            height: 80.0,
+            width: double.infinity,
+            padding: EdgeInsets.only(left: 20.0, right: 20.0),
+            child: DropdownButtonFormField(
+                isDense: false,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+              itemHeight: 200.0,
                 value: _dropDownvalue,
-                items: [
-                  DropdownMenuItem(child: Text("First Item"), value: 1,),
-                  DropdownMenuItem(child: Text("Second Item"),value: 2,),
-                  DropdownMenuItem(child: Text("Third Item"), value: 3),
-                  DropdownMenuItem(child: Text("Fourth Item"), value: 4),
-                ],
-                onChanged: (int? value) {
+                items: dropdownItemList,
+                onChanged: (dynamic? value) {
                   setState(() {
                     _dropDownvalue = value!;
                   });
@@ -89,16 +53,67 @@ class _MyWidgetState extends State<MyWidget> {
     );
   }
 
-  dropDownWidget(int value, String startTime,String endTime,String status, String shift){
+  dropDownWidget(int value, String startTime, String endTime, String status, String shift) {
     return DropdownMenuItem(
-      child: Column(
-        children: [
-          Text("[{$startTime}] to [{$endTime}]"),
-          Text("[{$status}] ({$shift})" ),
-        ],
+      child: Container(
+        width: double.infinity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("$startTime to $endTime"),
+            Text("[$status] ($shift)"),
+          ],
+        ),
       ),
       value: value,
     );
+  }
+
+  Future loadTimeSlot() async {
+    String jsonString = await _loadTimeSlot();
+    final jsonResponse = json.decode(jsonString);
+    var timeSlotMap = new BusSchedule.fromJson(jsonResponse);
+
+    shiftInfo.clear();
+
+    timeSlotMap.shift.forEach((key, value) {
+      for(var item in value){
+        shiftInfo.add(new ShiftInfo(key, item['schedule_trip'], item['start_time'], item['end_time']));
+      }
+    });
+    sortByTime();
+  }
+
+  createDropDownItem(){
+    int count = 1;
+    dropdownItemList.clear();
+    dropdownItemList.add(DropdownMenuItem(
+        child: Container(
+          padding: EdgeInsets.all(8),
+          child: Text("Pick a Schedule"),)
+      ,value: 0,));
+    for(var item in shiftInfo){
+      dropdownItemList.add(dropDownWidget(count,item.startTime,item.endTime,item.status,item.schedule));
+      count++;
+    }
+  }
+
+  sortByTime(){
+    List<ShiftInfo> sortAMShiftInfo = [];
+    List<ShiftInfo> sortPMShiftInfo = [];
+    for(var item in shiftInfo){
+      if(item.startTime.contains("am")){
+        sortAMShiftInfo.add(item);
+      }else{
+        sortPMShiftInfo.add(item);
+      }
+    }
+
+    sortAMShiftInfo.sort((a, b) => a.startTime.compareTo(b.startTime));
+    sortPMShiftInfo.sort((a, b) => a.startTime.compareTo(b.startTime));
+    shiftInfo.clear();
+    shiftInfo = sortAMShiftInfo + sortPMShiftInfo;
   }
 }
 
